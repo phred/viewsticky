@@ -18,7 +18,7 @@
  * @return the jQuery set, so this is a "chainable" operation
  */
 jQuery.fn.viewSticky = function(options) {
-    options && $.viewSticky(this, options) || $.viewSticky(this, {
+    options && jQuery.viewSticky(this, options) || jQuery.viewSticky(this, {
         interval: 25,
         downVelocity: 0.15,
         upVelocity: 1.0,
@@ -38,7 +38,7 @@ jQuery.fn.viewSticky = function(options) {
  * @return the object which animates the "sticky" element.
  */
 jQuery.viewSticky = function(element, options) {
-    var element = $(element).get(0);
+    var element = jQuery(element).get(0);
     return element.viewSticky || (element.viewSticky = new jQuery._viewSticky(element, options));
 };
 
@@ -48,7 +48,7 @@ jQuery.viewSticky = function(element, options) {
  */
 jQuery._viewSticky = function(element, options) {
     var sticky = this;
-    var el = $(element);
+    var el = jQuery(element);
 
     this.interval = options.interval;
     this.downVelocity = options.downVelocity;
@@ -64,18 +64,18 @@ jQuery._viewSticky = function(element, options) {
     this.startTime = t;
 
     el.css({position: this.position, top: this.startY+"px"});
-    sticky.scrollTop = $(window).scrollTop();
+    sticky.scrollTop = jQuery(window).scrollTop();
 
     this._animate = function(sticky) {
         var t = (new Date()).getTime();
         var top =  parseFloat(sticky.target.css('top'));
 
         sticky._scrollTop = sticky.scrollTop;
-        sticky.scrollTop = $(window).scrollTop();
+        sticky.scrollTop = jQuery(window).scrollTop();
         sticky.scrollDelta = sticky.scrollTop - sticky._scrollTop;
 
         sticky.endY = 0 + (sticky.position == 'fixed' && sticky.scrollDelta > 0 ? -sticky.scrollDelta : 0) +
-         (sticky.position == 'absolute' ? $(window).scrollTop() : 0);
+         (sticky.position == 'absolute' ? jQuery(window).scrollTop() : 0);
     
         var dy = (sticky.endY - top)*(sticky.endY - top)*(sticky.endY - top)/sticky.interval;
         dy = dy > 0 ? Math.min(dy, (sticky.endY - top)*sticky.downVelocity) : (sticky.endY - top)*sticky.upVelocity;
