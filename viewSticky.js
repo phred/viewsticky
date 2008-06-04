@@ -12,15 +12,19 @@
  *  options.downVelocity --  Float, scales animation speed when the note moves downward (+y).  Default: 0.2
  *  options.upVelocity   --  Float, scales animation speed when the note moves upward (-y).  Default: 1.1
  *  options.selector     --  The selector to find the link to use for the "dismiss" link.  Default: ".dismiss"
+ *  options.position     --  String, what CSS 'position' property to use.  Default: 'fixed'
+ *  options.autoDismiss  --  Time, in milliseconds, before automatically dimissing the notice.  Default: null
  *
  * @return the jQuery set, so this is a "chainable" operation
  */
 jQuery.fn.viewSticky = function(options) {
     options && $.viewSticky(this, options) || $.viewSticky(this, {
         interval: 25,
-        downVelocity: 0.2,
+        downVelocity: 0.15,
         upVelocity: 1.0,
-        selector: '.dismiss'
+        selector: '.dismiss',
+        position: 'fixed',
+        autoDismiss: null
      });
     return this;
 };
@@ -49,6 +53,7 @@ jQuery._viewSticky = function(element, options) {
     this.interval = options.interval;
     this.downVelocity = options.downVelocity;
     this.upVelocity = options.upVelocity;
+    this.position = options.position;
     
     this.target = el;
 
@@ -58,26 +63,35 @@ jQuery._viewSticky = function(element, options) {
     var t = (new Date()).getTime();
     this.startTime = t;
 
-    el.css({position: 'absolute', top: this.startY+"px"});
+    el.css({position: this.position, top: this.startY+"px"});
+    sticky.scrollTop = $(window).scrollTop();
 
     this._animate = function(sticky) {
         var t = (new Date()).getTime();
         var top =  parseFloat(sticky.target.css('top'));
-        
-        sticky.endY = $(window).scrollTop();
-        
+
+        sticky._scrollTop = sticky.scrollTop;
+        sticky.scrollTop = $(window).scrollTop();
+        sticky.scrollDelta = sticky.scrollTop - sticky._scrollTop;
+
+        sticky.endY = 0 + (sticky.position == 'fixed' && sticky.scrollDelta > 0 ? -sticky.scrollDelta : 0) +
+         (sticky.position == 'absolute' ? $(window).scrollTop() : 0);
+    
         var dy = (sticky.endY - top)*(sticky.endY - top)*(sticky.endY - top)/sticky.interval;
         dy = dy > 0 ? Math.min(dy, (sticky.endY - top)*sticky.downVelocity) : (sticky.endY - top)*sticky.upVelocity;
 
         sticky.target.css('top', (top+dy)+"px");
     };
-    
+
     this.dismiss = function (sticky) {
         window.clearInterval(sticky.intervalID);
         sticky.target.fadeOut('slow');
     };
 
     this.intervalID = window.setInterval(this._animate, this.interval, this);
+    
+    if (options.autoDismiss)
+        window.setTimeout(this.dismiss, options.autoDismiss, this);
 
     el.find(options.selector).click(function () {
         sticky.dismiss(sticky);
