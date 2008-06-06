@@ -14,6 +14,7 @@
  *  options.selector     --  The selector to find the link to use for the "dismiss" link.  Default: ".dismiss"
  *  options.position     --  String, what CSS 'position' property to use.  Default: 'fixed'
  *  options.autoDismiss  --  Time, in milliseconds, before automatically dimissing the notice.  Default: null
+ *  options.oneShot      --  Boolean, if true, the animation stops when the sticky hits the top scroll edge.
  *
  * @return the jQuery set, so this is a "chainable" operation
  */
@@ -24,7 +25,8 @@ jQuery.fn.viewSticky = function(options) {
         upVelocity: 1.0,
         selector: '.dismiss',
         position: 'fixed',
-        autoDismiss: null
+        autoDismiss: null,
+        oneShot: true
      });
     return this;
 };
@@ -54,8 +56,10 @@ jQuery._viewSticky = function(element, options) {
     this.downVelocity = options.downVelocity;
     this.upVelocity = options.upVelocity;
     this.position = options.position;
-    
-    this.target = el;
+    this.oneShot = options.oneShot;
+    this.expireCount = 0;
+
+    this._target = el;
 
     this.startY = -2*el.height();
     this.endY = 0;
@@ -64,11 +68,10 @@ jQuery._viewSticky = function(element, options) {
     this.startTime = t;
 
     el.css({position: this.position, top: this.startY+"px"});
-    sticky.scrollTop = jQuery(window).scrollTop();
-
-    this._animate = function(sticky) {
+    this.scrollTop = jQuery(window).scrollTop();
+    this._animate = function() {
         var t = (new Date()).getTime();
-        var top =  parseFloat(sticky.target.css('top'));
+        var top =  parseFloat(sticky._target.css('top'));
 
         sticky._scrollTop = sticky.scrollTop;
         sticky.scrollTop = jQuery(window).scrollTop();
@@ -76,16 +79,20 @@ jQuery._viewSticky = function(element, options) {
 
         sticky.endY = 0 + (sticky.position == 'fixed' && sticky.scrollDelta > 0 ? -sticky.scrollDelta : 0) +
          (sticky.position == 'absolute' ? jQuery(window).scrollTop() : 0);
-    
+
         var dy = (sticky.endY - top)*(sticky.endY - top)*(sticky.endY - top)/sticky.interval;
         dy = dy > 0 ? Math.min(dy, (sticky.endY - top)*sticky.downVelocity) : (sticky.endY - top)*sticky.upVelocity;
 
-        sticky.target.css('top', (top+dy)+"px");
+        sticky._target.css('top', (top+dy)+"px");
+        if (sticky.oneShot && Math.abs(dy) < 1) {
+            if (sticky.expireCount++ > 100)
+                window.clearInterval(sticky.intervalID);
+        }
     };
 
     this.dismiss = function (sticky) {
         window.clearInterval(sticky.intervalID);
-        sticky.target.fadeOut('slow');
+        sticky._target.fadeOut('slow');
     };
 
     this.intervalID = window.setInterval(this._animate, this.interval, this);
