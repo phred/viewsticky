@@ -27,27 +27,9 @@
     <script type="text/javascript" charset="utf-8" src="viewSticky.js"></script>
 
     <script type="text/javascript" charset="utf-8">
-        var options = {
-            interval: 25,
-            downVelocity: 0.15,
-            upVelocity: 1.0,
-            selector: '.dismiss',
-            position: 'fixed',
-            autoDismiss: null,
-            oneShot: true
-         };
-    </script>
-    <!--[if lt IE 7]>
-    <script type="text/javascript">
-        options.position = 'absolute';
-        options.oneShot = false;
-    </script>
-    <![endif]-->
-    <script type="text/javascript" charset="utf-8">
         $(function() {
             // Here's how it's done:
-
-            $("#sticky").viewSticky(options);
+            $("#sticky").viewSticky();
         });
     </script>
 </head>

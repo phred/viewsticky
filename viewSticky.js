@@ -12,22 +12,34 @@
  *  options.downVelocity --  Float, scales animation speed when the note moves downward (+y).  Default: 0.2
  *  options.upVelocity   --  Float, scales animation speed when the note moves upward (-y).  Default: 1.1
  *  options.selector     --  The selector to find the link to use for the "dismiss" link.  Default: ".dismiss"
- *  options.position     --  String, what CSS 'position' property to use.  Default: 'fixed'
+ *  options.position     --  String; what CSS 'position' property to use.  Default: 'fixed'
  *  options.autoDismiss  --  Time, in milliseconds, before automatically dimissing the notice.  Default: null
- *  options.oneShot      --  Boolean, if true, the animation stops when the sticky hits the top scroll edge.
+ *  options.oneShot      --  Boolean; if true, animation ceases when the sticky hits the top scroll edge. Default: true
+ *  options.pushPageDown --  Boolean; if true, make the contents of the page appear to slide downward. Default: true
  *
  * @return the jQuery set, so this is a "chainable" operation
  */
-jQuery.fn.viewSticky = function(options) {
-    options && jQuery.viewSticky(this, options) || jQuery.viewSticky(this, {
+jQuery.viewStickyDefaults = {
         interval: 25,
         downVelocity: 0.15,
         upVelocity: 1.0,
         selector: '.dismiss',
         position: 'fixed',
         autoDismiss: null,
-        oneShot: true
-     });
+        oneShot: true,
+	pushPageDown: true
+};
+
+/**
+ * IE6 /hates/ position: fixed, so simulate it using 'absolute' by default.
+ */
+if (jQuery.browser.msie && jQuery.browser.version < 7.0) {
+	jQuery.viewStickyDefaults.position = 'absolute';
+	jQuery.viewStickyDefaults.oneShot = false;
+}
+
+jQuery.fn.viewSticky = function(options) {
+    jQuery.viewSticky(this, jQuery.extend({}, jQuery.viewStickyDefaults, options));
     return this;
 };
 
@@ -58,6 +70,7 @@ jQuery._viewSticky = function(element, options) {
     this.position = options.position;
     this.oneShot = options.oneShot;
     this.expireCount = 0;
+    this.pushPageDown = options.pushPageDown;
 
     this._target = el;
 
@@ -66,6 +79,11 @@ jQuery._viewSticky = function(element, options) {
 
     var t = (new Date()).getTime();
     this.startTime = t;
+
+    if (options.pushPageDown) {
+       $("body").prepend("<div id='_viewStickyPagePusher' style='height: 0px;'/>");
+       this._pusher = $("#_viewStickyPagePusher");
+    }
 
     el.css({position: this.position, top: this.startY+"px"});
     this.scrollTop = jQuery(window).scrollTop();
@@ -79,15 +97,19 @@ jQuery._viewSticky = function(element, options) {
 
         sticky.endY = 0 + (sticky.position == 'fixed' && sticky.scrollDelta > 0 ? -sticky.scrollDelta : 0) +
          (sticky.position == 'absolute' ? jQuery(window).scrollTop() : 0);
+	sticky.endY = sticky.oneShot ? 0 : sticky.endY;
 
         var dy = (sticky.endY - top)*(sticky.endY - top)*(sticky.endY - top)/sticky.interval;
         dy = dy > 0 ? Math.min(dy, (sticky.endY - top)*sticky.downVelocity) : (sticky.endY - top)*sticky.upVelocity;
 
         sticky._target.css('top', (top+dy)+"px");
         if (sticky.oneShot && Math.abs(dy) < 1) {
-            if (sticky.expireCount++ > 100)
+            if (sticky.expireCount++ > 10)
                 window.clearInterval(sticky.intervalID);
         }
+
+	if (sticky._pusher)
+           sticky._pusher.height(sticky._target.height()+top);
     };
 
     this.dismiss = function (sticky) {
