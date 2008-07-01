@@ -81,8 +81,8 @@ jQuery._viewSticky = function(element, options) {
     this.startTime = t;
 
     if (options.pushPageDown) {
-       $("body").prepend("<div id='_viewStickyPagePusher' style='height: 0px;'/>");
-       this._pusher = $("#_viewStickyPagePusher");
+       jQuery("body").prepend("<div id='_viewStickyPagePusher' style='height: 0px;'/>");
+       this._pusher = jQuery("#_viewStickyPagePusher");
     }
 
     el.css({position: this.position, top: this.startY+"px"});
