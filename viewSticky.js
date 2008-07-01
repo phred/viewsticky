@@ -108,7 +108,8 @@ jQuery._viewSticky = function(element, options) {
                 window.clearInterval(sticky.intervalID);
         }
 
-	if (sticky._pusher)
+	if (sticky._pusher && (sticky._position == 'fixed' ||
+         sticky._position == 'absolute' && sticky._pusher.height() < sticky._target.height()))
            sticky._pusher.height(sticky._target.height()+top);
     };
 
